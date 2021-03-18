@@ -2,7 +2,7 @@ import os
 import json
 import argparse
 import numpy as np
-import tqdm
+from tqdm import tqdm
 
 from utils.tools import *
 
@@ -82,11 +82,8 @@ def train(token, docs):
 
         with open(doc) as doc_file:
             print("Processing: ", doc)
-            while True:
-                doc_line = doc_file.readline()
-                if not doc_line:
-                    break
-
+            doc_lines = doc_file.readlines()
+            for doc_line in tqdm(doc_lines, leave=False):
                 doc_line = json.loads(doc_line)
                 # read 'html' and 'title'
                 _train_str(token, doc_line['title'], model)
