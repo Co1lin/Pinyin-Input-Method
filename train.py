@@ -3,6 +3,7 @@ import json
 import argparse
 import numpy as np
 from tqdm import tqdm
+from multiprocessing import Pool
 
 from utils.tools import *
 import utils.params as params
@@ -29,7 +30,7 @@ def _train_str(token, string, model):
     '''
     update statistics in the model using the string
     :param string:
-    :return: nothing (model passed as reference, so it is modified in this function)
+    :return: a model trained by only the given string
     '''
     last_char_token = params.START_TOKEN # 0 corresponds to the starting sign
     for char in string:
@@ -57,8 +58,37 @@ def _train_str(token, string, model):
     if last_char_token >= 0:
         model['2'][last_char_token][params.END_TOKEN] += 1
 
+    return model
 
-def train(token, docs, model_path):
+def _train_doc(token, doc_path, process_id):
+    '''
+    train the model using a single doc
+    :param process_id: id of process
+    :return: a model trained by only the given doc
+    '''
+    size = len(token)
+    model = {
+        'size': size,
+        '1': np.zeros(size),
+        '2': np.zeros([size, size]),
+    }
+    with open(doc_path) as doc_file:
+
+        print(f"Process #{process_id}: {doc_path}")
+        doc_lines = doc_file.readlines()
+        for doc_line in tqdm(doc_lines):
+            doc_line = json.loads(doc_line)
+            # read 'html' and 'title'
+            _train_str(token, doc_line['title'], model)
+            _train_str(token, doc_line['html'], model)
+        # end process this doc
+    # close this doc
+    # save result of this process
+    np.save(checkpoints_path + '/checkpoints_' + str(process_id) + '.npy', model)
+    return model
+
+
+def train(token, docs_path):
     '''
     train the model using docs from docs list
     :param token: token dict
@@ -71,28 +101,31 @@ def train(token, docs, model_path):
         '1':    np.zeros(size),
         '2':    np.zeros([size, size]),
     }
+
+    pool = Pool(process_number)
+    results = []
     i = 0
-    for doc in tqdm(docs):
+    for doc_path in tqdm(docs_path):
         i += 1
-        with open(doc) as doc_file:
-            print("Processing: ", doc)
-            doc_lines = doc_file.readlines()
-            for doc_line in tqdm(doc_lines):
-                doc_line = json.loads(doc_line)
-                # read 'html' and 'title'
-                _train_str(token, doc_line['title'], model)
-                _train_str(token, doc_line['html'], model)
-            # end process this doc
-        # close this doc
-        np.save(model_path + '.' + str(i), model)
+        results.append(
+            pool.apply_async(_train_doc, args=(token, doc_path, i))
+        )
     # end loop docs
+    pool.close()    #?
+    pool.join() # wait for each process to complete
+    # merge the result
+    for subres in results:
+        model += subres.get()
+
     return model
 
 
-docs_dir_path   = ''
-token_path      = ''
-model_path      = ''
-keyword         = ''
+docs_dir_path       = ''
+keyword             = ''
+token_path          = ''
+model_path          = ''
+checkpoints_path    = ''
+process_number      = 0
 
 if __name__ == "__main__":
 
@@ -110,12 +143,18 @@ if __name__ == "__main__":
 
     parser.add_argument('-m', '--model-path', dest='model_path', type=str, default='model.npy', help="model file path to save")
 
+    parser.add_argument('-c', '--checkpoints-path', dest='checkpoints_path', type=str, default='./checkpoints', help="path to checkpoints directory")
+
+    parser.add_argument('-p', '--process-number', dest='process_number', type=int, default='4', help="number of processes simultaneously")
+
     # load args
     args = parser.parse_args()
-    docs_dir_path = args.docs_dir_path
+    docs_dir_path = dir_path(args.docs_dir_path)
     keyword = args.keyword
     token_path = args.token_path
     model_path = args.model_path
+    checkpoints_path = dir_path(args.checkpoints_path)
+    process_number = args.process_number
 
     # preprocess
     docs = get_docs(docs_dir_path, keyword)
@@ -124,7 +163,7 @@ if __name__ == "__main__":
         token = json.load(token_file)
 
     # train
-    model = train(token, docs, model_path)
+    model = train(token, docs)
 
     # save
     np.save(model_path, model)
