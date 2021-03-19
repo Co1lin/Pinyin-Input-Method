@@ -83,7 +83,7 @@ def train(token, docs):
                 _train_str(token, doc_line['html'], model)
             # end process this doc
         # close this doc
-    #end loop docs
+    # end loop docs
     return model
 
 
@@ -125,6 +125,9 @@ if __name__ == "__main__":
         token = json.load(token_file)
 
     # train
-    model = train(token, docs)
+    model = train(token, docs, model_path)
+
+    # save
+    np.save(model_path, model)
 
     pass

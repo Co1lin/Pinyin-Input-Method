@@ -5,7 +5,7 @@ save token file
 '''
 import json
 import argparse
-import tqdm
+from tqdm import tqdm
 
 def tokenize(dict_path):
     '''
@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
     parser.add_argument('-dict', '--dict-path', dest='dict_path', type=str, default='./material/chars.txt', help="dictionary file (contains characters in one line) path")
 
-    parser.add_argument('-o', '--output-token-path', dest='token_file_path', type=str, default='./material/token.json', help="path to save token file")
+    parser.add_argument('-o', '--output-token-path', dest='token_file_path', type=str, default='./token.json', help="path to save token file")
 
     # load args
     args = parser.parse_args()
@@ -46,9 +46,9 @@ if __name__ == '__main__':
     token_file_path = args.token_file_path
 
     # processing
-    token_dict = tokenize(dict_path)
+    with open(token_file_path, 'w') as token_file:
 
-    # saving
-    with open(token_file_path) as token_file:
-        json.dump(token_dict, token_file)
+        token_dict = tokenize(dict_path)
+        # saving
+        json.dump(token_dict, token_file, ensure_ascii=False)
 
