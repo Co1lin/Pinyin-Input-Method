@@ -3,7 +3,8 @@ import json
 import argparse
 import numpy as np
 from tqdm import tqdm
-from multiprocessing import Pool
+from p_tqdm import p_map
+from functools import partial
 
 from utils.tools import *
 import utils.params as params
@@ -60,7 +61,7 @@ def _train_str(token, string, model):
 
     return model
 
-def _train_doc(token, doc_path, process_id):
+def _train_doc(doc_path, process_id, token):
     '''
     train the model using a single doc
     :param process_id: id of process
@@ -74,9 +75,8 @@ def _train_doc(token, doc_path, process_id):
     }
     with open(doc_path) as doc_file:
 
-        print(f"Process #{process_id}: {doc_path}")
         doc_lines = doc_file.readlines()
-        for doc_line in tqdm(doc_lines):
+        for doc_line in tqdm(doc_lines, position=process_id, postfix=f"Process #{process_id}: {doc_path}"):
             doc_line = json.loads(doc_line)
             # read 'html' and 'title'
             _train_str(token, doc_line['title'], model)
@@ -101,21 +101,14 @@ def train(token, docs_path):
         '1':    np.zeros(size),
         '2':    np.zeros([size, size]),
     }
-
-    pool = Pool(process_number)
-    results = []
-    i = 0
-    for doc_path in tqdm(docs_path):
-        i += 1
-        results.append(
-            pool.apply_async(_train_doc, args=(token, doc_path, i))
-        )
-    # end loop docs
-    pool.close()    #?
-    pool.join() # wait for each process to complete
-    # merge the result
-    for subres in results:
-        model += subres.get()
+    # split the task into multi-processes by p_tqdm
+    results = p_map(partial(_train_doc, token=token),
+                    docs_path,
+                    range(1, len(docs_path) + 1),
+                    num_cpus=process_number)
+    # merge the results
+    for res in results:
+        model += res
 
     return model
 
