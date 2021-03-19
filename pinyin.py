@@ -21,7 +21,7 @@ if __name__ == '__main__':
 
     # process the input
     with open(input_file_path) as input_file:
-        with open(output_file_path, 'r') as output_file:
+        with open(output_file_path, 'w') as output_file:
 
             while True:
                 line = input_file.readline()

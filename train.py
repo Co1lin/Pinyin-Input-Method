@@ -5,6 +5,8 @@ import numpy as np
 from tqdm import tqdm
 
 from utils.tools import *
+import utils.params as params
+
 
 def get_docs(docs_dir_path, keyword):
     '''
@@ -22,27 +24,14 @@ def get_docs(docs_dir_path, keyword):
 
     return docs_list
 
-def generate_dict(dict_path):
-    '''
-    :param path to dict_path:
-    :return: a dict: character -> index number
-    '''
-    token_dict = {}
-    with open(dict_path) as dict_file:
-
-        chars = dict_file.read()
-        for i in range(0, len(chars)):
-            token_dict[chars[i]] = i
-
-    return token_dict
 
 def _train_str(token, string, model):
     '''
     update statistics in the model using the string
     :param string:
-    :return: nothing
+    :return: nothing (model passed as reference, so it is modified in this function)
     '''
-    last_char_token = -1
+    last_char_token = params.START_TOKEN # 0 corresponds to the starting sign
     for char in string:
 
         if is_chinese(char):
@@ -50,12 +39,12 @@ def _train_str(token, string, model):
             char_token = -1
             try:
                 char_token = token[char]
-            except KeyError:
+            except KeyError:    # char is not in dictionary, ignore it
                 pass
-            except Exception as e:
+            except Exception as e:  # unexpected error
                 print(e)
                 raise
-            else:
+            else:   # char is in dictionary
                 model['1'][char_token] += 1
                 # number of simultaneous occurrence of two characters
                 if last_char_token >= 0:  # is a Chinese character
@@ -63,11 +52,15 @@ def _train_str(token, string, model):
                 last_char_token = char_token
         else:
             last_char_token = -1
+    # end loop of string
+    # deal with the ending sign (token: 1)
+    if last_char_token >= 0:
+        model['2'][last_char_token][params.END_TOKEN] += 1
 
 
 def train(token, docs):
     '''
-
+    train the model using docs from docs list
     :param token: token dict
     :param docs: docs filenames list (not)
     :return: a model in json format contains:
@@ -83,7 +76,7 @@ def train(token, docs):
         with open(doc) as doc_file:
             print("Processing: ", doc)
             doc_lines = doc_file.readlines()
-            for doc_line in tqdm(doc_lines, leave=False):
+            for doc_line in tqdm(doc_lines):
                 doc_line = json.loads(doc_line)
                 # read 'html' and 'title'
                 _train_str(token, doc_line['title'], model)
@@ -95,7 +88,6 @@ def train(token, docs):
 
 
 docs_dir_path   = ''
-dict_path       = ''
 token_path      = ''
 model_path      = ''
 keyword         = ''
@@ -112,9 +104,7 @@ if __name__ == "__main__":
 
     parser.add_argument('-k', '--keyword', dest='keyword', type=str, default='2016', help='select files as docs only when their filename contain this keyword')
 
-    parser.add_argument('-dict', '--dict-path', dest='dict_path', type=str, default='./material/chars.txt', help="dictionary file (contains characters in one line) path")
-
-    parser.add_argument('-v', '--token-path', dest='token_path', type=str, default='token.json', help="token file path to save")
+    parser.add_argument('-t', '--token-path', dest='token_path', type=str, default='token.json', help="path to token file")
 
     parser.add_argument('-m', '--model-path', dest='model_path', type=str, default='model.npy', help="model file path to save")
 
@@ -126,11 +116,13 @@ if __name__ == "__main__":
     if dict_path[-1] == '/':
         dict_path = dict_path[:-1]
     token_path = args.token_path
-    model_path = model_path
+    model_path = args.model_path
 
     # preprocess
     docs = get_docs(docs_dir_path, keyword)
-    token = generate_dict(dict_path)
+    token = {}
+    with open(token_path) as token_file:
+        token = json.load(token_file)
 
     # train
     model = train(token, docs)
