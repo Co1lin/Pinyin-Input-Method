@@ -58,7 +58,7 @@ def _train_str(token, string, model):
         model['2'][last_char_token][params.END_TOKEN] += 1
 
 
-def train(token, docs):
+def train(token, docs, model_path):
     '''
     train the model using docs from docs list
     :param token: token dict
@@ -71,8 +71,9 @@ def train(token, docs):
         '1':    np.zeros(size),
         '2':    np.zeros([size, size]),
     }
+    i = 0
     for doc in tqdm(docs):
-
+        i += 1
         with open(doc) as doc_file:
             print("Processing: ", doc)
             doc_lines = doc_file.readlines()
@@ -83,6 +84,7 @@ def train(token, docs):
                 _train_str(token, doc_line['html'], model)
             # end process this doc
         # close this doc
+        np.save(model_path + '.' + str(i), model)
     # end loop docs
     return model
 
@@ -112,9 +114,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     docs_dir_path = args.docs_dir_path
     keyword = args.keyword
-    dict_path = args.dict_path
-    if dict_path[-1] == '/':
-        dict_path = dict_path[:-1]
     token_path = args.token_path
     model_path = args.model_path
 
