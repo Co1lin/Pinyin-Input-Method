@@ -17,16 +17,16 @@ def tokenize(dict_path):
 
         chars = dict_file.read()
         print("Tokenizing...")
-        token_dict['START'] = 0
-        token_dict['END'] = 1
+        token_dict['>'] = 0
+        token_dict['<'] = 1
         for i in tqdm( range(0, len(chars)) ):
             token_dict[chars[i]] = i + 2
 
     return token_dict
 
 
-dict_path       = ''
-token_file_path       = ''
+dict_path           = ''
+token_file_path     = ''
 
 if __name__ == '__main__':
 
@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
     parser.add_argument('-dict', '--dict-path', dest='dict_path', type=str, default='./material/chars.txt', help="dictionary file (contains characters in one line) path")
 
-    parser.add_argument('-o', '--output-token-path', dest='token_file_path', type=str, default='./token.json', help="path to save token file")
+    parser.add_argument('-o', '--output-token-path', dest='token_file_path', type=str, default='./utils/token.json', help="path to save token file")
 
     # load args
     args = parser.parse_args()

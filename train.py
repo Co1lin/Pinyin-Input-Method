@@ -9,112 +9,87 @@ from functools import partial
 from utils.tools import *
 import utils.params as params
 
+def update_dict(d, k):
+    if k not in d:
+        d[k] = 1
+    else:
+        d[k] += 1
 
-def get_docs(docs_dir_path, keyword):
+def _train_str(string, model):
     '''
-    :param docs_dir_path: path of dir containing docs for training
-    :param keyword: only the files whose names contain the keyword will be returned
-    :return: a list of filename
-    '''
-    docs_list = os.listdir(docs_dir_path)
-
-    for i in range(len(docs_list) - 1, -1, -1):
-        if keyword not in docs_list[i]:
-            docs_list.pop(i)
-        else:
-            docs_list[i] = docs_dir_path + '/' + docs_list[i]
-
-    return docs_list
-
-
-def _train_str(token, string, model):
-    '''
-    update statistics in the model using the string
-    :param string:
+    update statistics in the model using the single line string
     :return: a model trained by only the given string
     '''
-    last_char_token = params.START_TOKEN # 0 corresponds to the starting sign
-    for char in string:
+    for i in range(0, len(string)):
+        model['1_total'] += 1
+        update_dict(model['1'], string[i])
+        pair = string[i : i + 2]
+        if len(pair) == 2:
+            model['2_total'] += 1
+            update_dict(model['2'], pair)
 
-        if is_chinese(char):
-            # number of single character occurrence
-            char_token = -1
-            try:
-                char_token = token[char]
-            except KeyError:    # char is not in dictionary, ignore it
-                pass
-            except Exception as e:  # unexpected error
-                print(e)
-                raise
-            else:   # char is in dictionary
-                model['1'][char_token] += 1
-                # number of simultaneous occurrence of two characters
-                if last_char_token >= 0:  # is a Chinese character
-                    model['2'][last_char_token][char_token] += 1
-                last_char_token = char_token
-        else:
-            last_char_token = -1
-    # end loop of string
-    # deal with the ending sign (token: 1)
-    if last_char_token >= 0:
-        model['2'][last_char_token][params.END_TOKEN] += 1
+            triple = string[i : i + 3]
+            if len(triple) == 3:
+                model['3_total'] += 1
+                update_dict(model['3'], triple)
 
     return model
 
-def _train_doc(doc_path, process_id, token):
+def _train_datum(datum_path, process_id):
     '''
     train the model using a single doc
     :param process_id: id of process
     :return: a model trained by only the given doc
     '''
-    size = len(token)
     model = {
-        'size': size,
-        '1': np.zeros(size),
-        '2': np.zeros([size, size]),
+        '1': {},
+        '1_total': 0,
+        '2': {},
+        '2_total': 0,
+        '3': {},
+        '3_total': 0,
     }
-    with open(doc_path) as doc_file:
+    with open(datum_path) as datum_file:
 
-        doc_lines = doc_file.readlines()
-        for doc_line in tqdm(doc_lines, position=process_id, postfix=f"Process #{process_id}: {doc_path}"):
-            doc_line = json.loads(doc_line)
-            # read 'html' and 'title'
-            _train_str(token, doc_line['title'], model)
-            _train_str(token, doc_line['html'], model)
-        # end process this doc
-    # close this doc
+        datum_lines = datum_file.readlines()
+        for datum_line in tqdm(datum_lines, position=process_id,
+                               postfix=f"Process #{process_id}: {datum_path}"):
+            _train_str(datum_line[:-1], model)
+        # end process this line
+    # close this datum_file
     # save result of this process
-    np.save(checkpoints_path + '/checkpoints_' + str(process_id) + '.npy', model)
+    np.save(checkpoints_path + '/' + path2name(datum_path) + '.npy', model)
     return model
 
 
-def train(token, docs_path):
+def train(data_path):
     '''
     train the model using docs from docs list
     :param token: token dict
     :param docs: docs filenames list (not)
     :return: a model in json format contains:
     '''
-    size = len(token)
     model = {
-        'size': size,
-        '1':    np.zeros(size),
-        '2':    np.zeros([size, size]),
+        '1': {},
+        '1_total': 0,
+        '2': {},
+        '2_total': 0,
+        '3': {},
+        '3_total': 0,
     }
-    # split the task into multi-processes by p_tqdm
-    results = p_map(partial(_train_doc, token=token),
-                    docs_path,
-                    range(1, len(docs_path) + 1),
-                    num_cpus=process_number)
-    # merge the results
-    for res in results:
-        model['1'] += res['1']
-        model['2'] += res['2']
+    if data_path: # is not empty
+        # split the task into multi-processes by p_tqdm
+        results = p_map(_train_datum,
+                        data_path,
+                        range(1, len(data_path) + 1),
+                        num_cpus=process_number)
+        # merge the results
+        for res in results:
+            add_dict_(model, res)
 
     return model
 
-
-docs_dir_path       = ''
+data_dir_path       = ''
 keyword             = ''
 token_path          = ''
 model_path          = ''
@@ -129,11 +104,9 @@ if __name__ == "__main__":
         allow_abbrev=True,
     )
 
-    parser.add_argument('-docs', '--docs-dir', dest='docs_dir_path', type=str, default='./material/sina_news_gbk', help="docs file for training")
+    parser.add_argument('-d', '--data-dir', dest='data_dir_path', type=str, default='./processed_data', help="preprocessed data file for training")
 
     parser.add_argument('-k', '--keyword', dest='keyword', type=str, default='2016', help='select files as docs only when their filename contain this keyword')
-
-    parser.add_argument('-t', '--token-path', dest='token_path', type=str, default='token.json', help="path to token file")
 
     parser.add_argument('-m', '--model-path', dest='model_path', type=str, default='model.npy', help="model file path to save")
 
@@ -143,23 +116,17 @@ if __name__ == "__main__":
 
     # load args
     args = parser.parse_args()
-    docs_dir_path = dir_path(args.docs_dir_path)
+    data_dir_path = dir_path(args.data_dir_path)
     keyword = args.keyword
-    token_path = args.token_path
     model_path = args.model_path
     checkpoints_path = dir_path(args.checkpoints_path)
     process_number = args.process_number
 
     # preprocess
-    docs = get_docs(docs_dir_path, keyword)
-    token = {}
-    with open(token_path) as token_file:
-        token = json.load(token_file)
+    data_path = get_docs(data_dir_path, keyword)
 
     # train
-    model = train(token, docs)
+    model = train(data_path)
 
     # save
     np.save(model_path, model)
-
-    pass
