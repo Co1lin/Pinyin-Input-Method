@@ -108,7 +108,8 @@ def train(token, docs_path):
                     num_cpus=process_number)
     # merge the results
     for res in results:
-        model += res
+        model['1'] += res['1']
+        model['2'] += res['2']
 
     return model
 
