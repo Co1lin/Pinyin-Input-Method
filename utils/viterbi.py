@@ -1,19 +1,24 @@
 import math
 
 def transfer_cost(pre, char, model: dict, beta):
-    res = 0
     # yx a
-    # Cost(a|x) = alpha * count(xa) / count(x) + (1 - alpha) * P(a)
-    count_a = model[1].get(char, 0.1)
+    # beta[0] * count(xa) / count(x) + beta[1] * count_yxa / count_yx +
+    # (1 - beta[0] - beta[1]) * P(a)
+    count_a = model[1].get(char, 1)
     p_a = count_a / model['1_total']
     count_x = model[1].get(pre[-1], 1)
     count_xa = model[2].get(pre[-1] + char, 0)
-    res = -math.log(beta[0] * count_xa / count_x + (1 - beta[0]) * p_a)
+    tmp = beta[0] * count_xa / count_x
     if len(pre) >= 2:
-        # Cost(a|yx) = beta * count(yxa) / count(yx) + (1 - beta) * P(a)
         count_yx = model[2].get(pre[-2:], 1)
         count_yxa = model[3].get(pre[-2:] + char, 0)
-        res += -math.log(beta[1] * count_yxa / count_yx + (1 - beta[1]) * p_a)
+        tmp += beta[1] * count_yxa / count_yx
+    tmp += (1 - beta[0] - beta[1]) * p_a
+    try:
+        res = -math.log(tmp)
+    except ValueError:
+        print('Error: ', beta[0], beta[1], count_a, p_a, count_x, count_xa, tmp)
+        raise
     return res
 
 def viterbi(line, pinyin_dict: dict, model: dict, beta=[0.8, 0.8]):
@@ -51,5 +56,6 @@ def viterbi(line, pinyin_dict: dict, model: dict, beta=[0.8, 0.8]):
         trace.append(layer_trace)
         cost.append(layer_cost)
 
+    #print('beta:', beta)
     return trace[-1][0][1:][:-1]
 

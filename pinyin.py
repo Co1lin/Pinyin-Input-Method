@@ -4,6 +4,7 @@ import numpy as np
 from utils.viterbi import viterbi
 
 from utils import params
+from utils.tools import *
 
 input_file_path     = ''
 output_file_path    = ''
@@ -17,18 +18,15 @@ if __name__ == '__main__':
         allow_abbrev=True,
     )
 
-    parser.add_argument('-i', '--input-file', dest='input_file_path', type=str, default='input.txt', help="Input file")
+    parser.add_argument('-i', '--input-file', dest='input_file_path', type=str, default=params.input_file, help="Input file")
 
-    parser.add_argument('-o', '--output-file', dest='output_file_path', type=str, default='output.txt', help="Output file")
+    parser.add_argument('-o', '--output-file', dest='output_file_path', type=str, default=params.output_file, help="Output file")
 
-    parser.add_argument('-m', '--model-file', dest='model_path', type=str, default=params.model_path,
-                        help="path to model")
+    parser.add_argument('-m', '--model-file', dest='model_path', type=str, default=params.model_path, help="path to model")
 
-    parser.add_argument('--pinyin-dict', dest='pinyin_dict_path', type=str, default='utils/pinyin_dict.json',
-                        help="path to pinyin dict")
+    parser.add_argument('--pinyin-dict', dest='pinyin_dict_path', type=str, default=params.pinyin_dict_json, help="path to pinyin dict")
 
-    parser.add_argument('-b', '--betas', dest='betas', type=float, nargs=2, default=[0.8, 0.8],
-                        help="betas")
+    parser.add_argument('-b', '--betas', dest='betas', type=float, nargs=2, default=params.betas, help="betas")
 
     # Load args
     args = parser.parse_args()
@@ -41,11 +39,7 @@ if __name__ == '__main__':
     pinyin_dict: dict
     with open(pinyin_dict_path) as f:
         pinyin_dict = json.load(f)
-    model: dict
-    with open(model_path) as f:
-        print('Loading model...')
-        model = dict(np.load(model_path, allow_pickle=True))['arr_0'][()]
-        print('Model loaded!')
+    model = load_model(model_path)
 
     # process the input
     with open(input_file_path) as input_file:
@@ -54,5 +48,4 @@ if __name__ == '__main__':
             lines = input_file.readlines()
             for line in lines:
                 res = viterbi(line.strip().lower(), pinyin_dict, model, args.betas)
-                output_file.write(res)
-                output_file.write('\n')
+                print(res, file=output_file)

@@ -5,18 +5,12 @@ from p_tqdm import p_map
 from functools import partial
 
 from tools import *
-
-def flag_sign(char):
-    return  char == ',' or char == '，' or \
-            char == '。' or char == '!' or char == '！' or \
-            char == '…' or char == '?' or char == '？' or \
-            char == ':' or char == '：' or \
-            char == '\"' or char == '；'
+import params
 
 def is_skip_sign(char):
     return char == '“' or char == '”' or char == ' '
 
-def _process_str(string, token):
+def _process_str(string):
     '''
     process a single string
     :return: a list which is got by splitting the string by untokenized characters
@@ -27,7 +21,6 @@ def _process_str(string, token):
         last_len = len(string)
         for i in range(0, last_len):
             if not is_chinese(string[i]):
-
                 if is_skip_sign(string[i]):
                     string = string[:i] + string[i + 1:]
                     break
@@ -49,7 +42,7 @@ def _process_str(string, token):
 
     return res
 
-def _process_doc(doc_path, process_id, token):
+def _process_doc(doc_path, process_id):
     '''
     delete untokenized characters and split the content into lines
     '''
@@ -61,17 +54,17 @@ def _process_doc(doc_path, process_id, token):
                              postfix=f"Process #{process_id}: {doc_path}"):
             doc_line = json.loads(doc_line)
             # read 'html' and 'title'
-            lines += _process_str(doc_line['title'], token)
-            lines += _process_str(doc_line['html'], token)
+            lines += _process_str(doc_line['title'])
+            lines += _process_str(doc_line['html'])
         # end process this doc
     # close this doc
     output_file = output_dir + '/processed_' + path2name(doc_path)
     with open(output_file, 'w') as f:
         f.writelines(lines)
 
-def process(docs_path, token):
+def process(docs_path):
 
-    p_map(partial(_process_doc, token=token),
+    p_map(partial(_process_doc),
           docs_path,
           range(1, len(docs_path) + 1),
           num_cpus=process_number)
@@ -79,7 +72,6 @@ def process(docs_path, token):
 
 docs_dir_path       = ''
 keyword             = ''
-token_path          = ''
 process_number      = 0
 output_dir          = ''
 
@@ -92,27 +84,21 @@ if __name__ == '__main__':
         allow_abbrev=True,
     )
 
-    parser.add_argument('-docs', '--docs-dir', dest='docs_dir_path', type=str, default='./material/sina_news_gbk', help="docs file for training")
+    parser.add_argument('-docs', '--docs-dir', dest='docs_dir_path', type=str, default=params.docs_dir, help="docs file for training")
 
-    parser.add_argument('-k', '--keyword', dest='keyword', type=str, default='2016', help='select files as docs only when their filename contain this keyword')
+    parser.add_argument('-k', '--keyword', dest='keyword', type=str, default=params.docs_keyword, help='select files as docs only when their filename contain this keyword')
 
-    parser.add_argument('-t', '--token-path', dest='token_path', type=str, default='./utils/token.json', help="path to token file")
+    parser.add_argument('-p', '--process-number', dest='process_number', type=int, default=params.process_number, help="number of processes simultaneously")
 
-    parser.add_argument('-p', '--process-number', dest='process_number', type=int, default='4', help="number of processes simultaneously")
-
-    parser.add_argument('-o', '--output-dir', dest='output_dir', type=str, default='./processed_data', help="path to dir where to store the processed data")
+    parser.add_argument('-o', '--output-dir', dest='output_dir', type=str, default=params.processed_data, help="path to dir where to store the processed data")
 
     # load args
     args = parser.parse_args()
     docs_dir_path = dir_path(args.docs_dir_path)
     keyword = args.keyword
     process_number = args.process_number
-    token_path = args.token_path
     output_dir = dir_path(args.output_dir)
 
     # process
-    token = {}
-    with open(token_path) as token_file:
-        token = json.load(token_file)
     docs_path = get_docs(docs_dir_path, keyword)
-    process(docs_path, token)
+    process(docs_path)

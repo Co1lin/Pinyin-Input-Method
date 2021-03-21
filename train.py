@@ -113,15 +113,15 @@ if __name__ == "__main__":
         allow_abbrev=True,
     )
 
-    parser.add_argument('-d', '--data-dir', dest='data_dir_path', type=str, default='./processed_data', help="preprocessed data file for training")
+    parser.add_argument('-d', '--data-dir', dest='data_dir_path', type=str, default=params.processed_data, help="preprocessed data file for training")
 
-    parser.add_argument('-k', '--keyword', dest='keyword', type=str, default='2016', help='select files as docs only when their filename contain this keyword')
+    parser.add_argument('-k', '--keyword', dest='keyword', type=str, default=params.docs_keyword, help='select files as docs only when their filename contain this keyword')
 
     parser.add_argument('-m', '--model-path', dest='model_path', type=str, default=params.model_path, help="model file path to save")
 
-    parser.add_argument('-c', '--checkpoints-path', dest='checkpoints_path', type=str, default='./checkpoints', help="path to checkpoints directory")
+    parser.add_argument('-c', '--checkpoints-path', dest='checkpoints_path', type=str, default=params.checkpoints_path, help="path to checkpoints directory")
 
-    parser.add_argument('-p', '--process-number', dest='process_number', type=int, default='4', help="number of processes simultaneously")
+    parser.add_argument('-p', '--process-number', dest='process_number', type=int, default=params.process_number, help="number of processes simultaneously")
 
     parser.add_argument('-a', '--alphas', dest='alphas', type=float, nargs=3, default=params.alphas, help="proportions of arguments to save for 1-, 2-, 3-gram")
 
@@ -140,7 +140,5 @@ if __name__ == "__main__":
     model = train(data_path, args.alphas)
 
     # save
-    model_path = model_path[:-4]
-    model_path += f'_{args.alphas[0]}_{args.alphas[1]}_{args.alphas[2]}.npz'
     print(f'Saving {model_path} ...')
     np.savez_compressed(model_path, model)

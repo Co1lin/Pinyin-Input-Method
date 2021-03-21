@@ -2,6 +2,7 @@
 some useful functions
 '''
 import os
+import numpy as np
 
 def is_chinese(char):
     return '\u4e00' <= char <= '\u9fa5'
@@ -43,3 +44,9 @@ def add_dict_(x, y):
                 x[key] += y.get(key, 0)
         else:
             x[key] = y[key]
+
+def load_model(model_path):
+    print('Loading model...')
+    model = dict(np.load(model_path, allow_pickle=True))['arr_0'][()]
+    print('Model loaded!')
+    return model

@@ -9,18 +9,18 @@ def merge(checkpoints):
     :return: a model
     '''
     model = {
-        '1': {},
+        1: {},
         '1_total': 0,
-        '2': {},
+        2: {},
         '2_total': 0,
-        '3': {},
+        3: {},
         '3_total': 0,
     }
 
-    for checkpoint_npy in checkpoints:
-        print('Load:', checkpoint_npy)
-        checkpoint = np.load(checkpoint_npy, allow_pickle=True).item()
-        print('Merge...', checkpoint_npy)
+    for checkpoint_npz in checkpoints:
+        print('Load:', checkpoint_npz)
+        checkpoint = load_model(checkpoint_npz)
+        print('Merge...', checkpoint_npz)
         add_dict_(model, checkpoint)
 
     print('Merge completed!')
@@ -55,7 +55,6 @@ if __name__ == "__main__":
     # merge
     model = merge(checkpoints)
     print('Merge completed: ')
-    print(model['1_total'])
 
     # save
-    np.save(model_path, model)
+    np.savez_compressed(model_path, model)

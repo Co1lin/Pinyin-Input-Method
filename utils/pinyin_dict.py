@@ -2,6 +2,8 @@ import argparse
 import json
 from tqdm import tqdm
 
+import params
+
 def generate(pinyin_dict_path):
     '''
     Generate pinyin to character dict
@@ -26,11 +28,9 @@ if __name__ == '__main__':
         allow_abbrev=True,
     )
 
-    parser.add_argument('--pinyin-dict', dest='pinyin_dict_path', type=str, default='./material/pinyin_dict.txt',
-                        help="path to dir where to store the processed data")
+    parser.add_argument('--pinyin-dict', dest='pinyin_dict_path', type=str, default=params.pinyin_dict_txt)
 
-    parser.add_argument('-o', '--output-path', dest='output_path', type=str, default='./utils/pinyin_dict.json',
-                        help="path to where to save the dict")
+    parser.add_argument('-o', '--output-path', dest='output_path', type=str, default=params.pinyin_dict_json, help="path to where to save the dict")
 
     # load args
     args = parser.parse_args()
