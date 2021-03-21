@@ -3,6 +3,7 @@ material
 .idea
 checkpoints/*
 processed_data/*
+model.npy
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

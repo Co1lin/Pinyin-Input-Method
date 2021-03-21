@@ -13,6 +13,9 @@ def generate(pinyin_dict_path):
             line = line.split()
             chars = line[1:]
             res[line[0]] = chars
+
+        res['start'] = '>'
+        res['end'] = '<'
         return res
 
 if __name__ == '__main__':
