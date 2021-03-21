@@ -21,16 +21,12 @@ def _train_str(string, model):
     :return: a model trained by only the given string
     '''
     for i in range(0, len(string)):
-        model['1_total'] += 1
         update_dict(model['1'], string[i])
         pair = string[i : i + 2]
         if len(pair) == 2:
-            model['2_total'] += 1
             update_dict(model['2'], pair)
-
             triple = string[i : i + 3]
             if len(triple) == 3:
-                model['3_total'] += 1
                 update_dict(model['3'], triple)
 
     return model
@@ -42,12 +38,9 @@ def _train_datum(datum_path, process_id):
     :return: a model trained by only the given doc
     '''
     model = {
-        '1': {},
-        '1_total': 0,
-        '2': {},
-        '2_total': 0,
-        '3': {},
-        '3_total': 0,
+        1: {},
+        2: {},
+        3: {},
     }
     with open(datum_path) as datum_file:
 
@@ -62,7 +55,7 @@ def _train_datum(datum_path, process_id):
     return model
 
 
-def train(data_path):
+def train(data_path, alphas: list):
     '''
     train the model using docs from docs list
     :param token: token dict
@@ -70,12 +63,9 @@ def train(data_path):
     :return: a model in json format contains:
     '''
     model = {
-        '1': {},
-        '1_total': 0,
-        '2': {},
-        '2_total': 0,
-        '3': {},
-        '3_total': 0,
+        1: {},
+        2: {},
+        3: {},
     }
     if data_path: # is not empty
         # split the task into multi-processes by p_tqdm
@@ -84,8 +74,17 @@ def train(data_path):
                         range(1, len(data_path) + 1),
                         num_cpus=process_number)
         # merge the results
-        for res in results:
+        print('Merge results from all processes...')
+        for res in tqdm(results):
             add_dict_(model, res)
+
+    # select
+    print(f'Selected top items according to alphas = {alphas} ...')
+    for i in tqdm(range(1, 4)):
+        length = len(model[i])
+        model[i] = sorted(model[i].items(),
+                          key= lambda kv:(kv[1], kv[0]),
+                          reverse=True)[:length * alphas[i - 1]]
 
     return model
 
@@ -114,6 +113,8 @@ if __name__ == "__main__":
 
     parser.add_argument('-p', '--process-number', dest='process_number', type=int, default='4', help="number of processes simultaneously")
 
+    parser.add_argument('-a', '--alphas', dest='alphas', type=float, nargs=3, default=[1, 0.8, 0.2], help="proportions of arguments to save for 1-, 2-, 3-gram")
+
     # load args
     args = parser.parse_args()
     data_dir_path = dir_path(args.data_dir_path)
@@ -126,7 +127,10 @@ if __name__ == "__main__":
     data_path = get_docs(data_dir_path, keyword)
 
     # train
-    model = train(data_path)
+    model = train(data_path, args.alphas)
 
     # save
+    model_path = model_path[:-4]
+    model_path += f'_{args.alphas[0]}_{args.alphas[1]}_{args.alphas[2]}.npy'
+    print(f'Saving {model_path} ...')
     np.save(model_path, model)

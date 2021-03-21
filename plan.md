@@ -13,3 +13,8 @@
 建立图
 
 动态规划求最短路
+
+import numpy as np
+
+model = np.load('model.npy', allow_pickle=True).item()
+

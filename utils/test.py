@@ -1,7 +1,15 @@
 from tools import *
+import argparse
 
-d1 = {'1': 1, '2': {'3': 2, '5': 1}}
-d2 = {'1': 5, '2': {'33': 4, '55': 55}}
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        prog='Train Pinyin Input Method',
+        description='Train Script',
+        allow_abbrev=True,
+    )
 
-add_dict_(d1, d2)
-pass
+    parser.add_argument('-a', '--alphas', dest='alphas', type=int, nargs=3, default=[1,2,3], help="proportions of arguments to save for 1, 2, 3 gram")
+
+    args = parser.parse_args()
+
+    print(args.alphas)
