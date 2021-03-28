@@ -21,7 +21,7 @@ def transfer_cost(pre, char, model: dict, beta):
         raise
     return res
 
-def viterbi(line, pinyin_dict: dict, model: dict, beta=[0.8, 0.8]):
+def viterbi(line, pinyin_dict: dict, model: dict, beta=[0.4, 0.5]):
     '''
     viterbi algorithm
     :return: a Chinese string

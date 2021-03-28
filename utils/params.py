@@ -23,7 +23,7 @@ checkpoints_path    = './checkpoints'
 # usage
 input_file          = 'input.txt'
 output_file         = 'output.txt'
-betas               = [0.8, 0.8]
+betas               = [0.4, 0.5]
 
 # test accuracy
 input_test_file     = './test/input.txt'
