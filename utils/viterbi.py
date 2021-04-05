@@ -4,6 +4,7 @@ def transfer_cost(pre, char, model: dict, beta):
     # yx a
     # beta[0] * count(xa) / count(x) + beta[1] * count_yxa / count_yx +
     # (1 - beta[0] - beta[1]) * P(a)
+    res = 1e9
     count_a = model[1].get(char, 1)
     p_a = count_a / model['1_total']
     count_x = model[1].get(pre[-1], 1)
