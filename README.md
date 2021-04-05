@@ -45,34 +45,34 @@ The main files are shown below.
 │   ├── pinyin_dict.txt
 │   ├── sina_news_gbk
 │   └── val.txt
-├── model_0.7_0.6_0.3.npz		# model file
+├── model_0.7_0.6_0.3.npz   # model file
 ├── output.txt
-├── pinyin.py								# main program for pinyin to Chinese conversion
-├── pinyin_eva.py						# Conversion program for evaluation purpose
-├── processed_data					# preprocessed data
-├── test										# test dataset
+├── pinyin.py               # main program for pinyin to Chinese conversion
+├── pinyin_eva.py           # Conversion program for evaluation purpose
+├── processed_data          # preprocessed data
+├── test                    # test dataset
 │   ├── ans.txt
 │   ├── input.txt
 │   ├── output.txt
 │   ├── report.txt
 │   └── val_bak.txt
 ├── test_data
-│   ├── gen_val.py					# generate input and ans for testing
+│   ├── gen_val.py          # generate input and ans for testing
 │   ├── input.txt
 │   ├── society
 │   ├── test_ans.txt
 │   └── test_data.txt
-├── train.py								# training program, output model
+├── train.py                # training program, output model
 └── utils
     ├── __init__.py
-    ├── evaluate.py					# evaluate accuracy
-    ├── merge.py						# merge statistics in different checkpoints (which may be computed in different processes
-    ├── params.py						# define some parameters
+    ├── evaluate.py         # evaluate accuracy
+    ├── merge.py            # merge statistics in different checkpoints (which may be computed in different processes
+    ├── params.py           # define some parameters
     ├── pinyin_dict.json
     ├── pinyin_dict.py
-    ├── preprocess.py				# preprocess the sina_news dataset
+    ├── preprocess.py       # preprocess the sina_news dataset
     ├── tools.py
-    └── viterbi.py					# viterbi algorithm
+    └── viterbi.py          # viterbi algorithm
 ```
 
 The main process to complete the whole task is:
