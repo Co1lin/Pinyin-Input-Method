@@ -18,7 +18,6 @@ import numpy as np
 
 model = np.load('model.npy', allow_pickle=True).item()
 
-
 准备数据 material 下的文件夹里
 python utils/preprocess.py
 生成到processed_data里
@@ -32,3 +31,4 @@ python train.py
 python pinyin.py
 
 python utils/evaluate.py
+
